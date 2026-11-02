@@ -1,7 +1,8 @@
 from times import time_range, compute_overlap_time
 from pytest import raises
 import pytest
-
+from pathlib import Path
+import yaml
 '''
 def test_given_input():
     large = time_range(
@@ -78,15 +79,7 @@ def test_same_times():
     assert result == expected
 '''
 
-
-def test_invalid_time_range():
-    with raises(ValueError):
-        time_range(
-            "2010-01-12 12:00:00",
-            "2010-01-12 10:00:00"
-        )
-
-
+'''
 @pytest.mark.parametrize(
     "time_range1, time_range2, expected",
     [
@@ -149,3 +142,40 @@ def test_invalid_time_range():
 def test_compute_overlap_time(time_range1, time_range2, expected):
     result = compute_overlap_time(time_range1, time_range2)
     assert result == expected
+'''
+
+
+
+fixture_path = Path(__file__).with_name("fixture.yaml")
+
+with fixture_path.open("r", encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+
+test_cases = []
+
+for item in data:
+    for name, case in item.items():
+        range1 = time_range(*case["time_range_1"])
+        range2 = time_range(*case["time_range_2"])
+        expected = [tuple(pair) for pair in case["expected"]]
+
+        test_cases.append(
+            pytest.param(range1, range2, expected, id=name)
+        )
+
+
+@pytest.mark.parametrize(
+    "time_range1, time_range2, expected",
+    test_cases
+)
+def test_compute_overlap_time(time_range1, time_range2, expected):
+    result = compute_overlap_time(time_range1, time_range2)
+    assert result == expected
+
+
+def test_invalid_time_range():
+    with raises(ValueError):
+        time_range(
+            "2010-01-12 12:00:00",
+            "2010-01-12 10:00:00"
+        )
